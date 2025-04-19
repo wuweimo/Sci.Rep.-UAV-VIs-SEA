@@ -1,0 +1,175 @@
+# Python script for calculating visible VIs from UAV visible-light remote sensing images of Cotton Nitrogen Reduction with Chitosan Field Experiment Plot I-1
+# Author: Wu Weimo
+# Institution: Tarim University
+# Date: September 30, 2023
+
+# INPUT: result-20230831-12-I-1.tif - Visible-light 2D reconstructed image from DJI Phantom 4 RTK UAV, cropped to Plot I-1
+# Output: 13 visible vegetation indices stored in 20230831-12-I-1-stat.csv
+#         R, G, B represent digital number (DN) values of red, green, and blue channels respectively
+#         Rmax, Gmax, Bmax represent maximum DN values of respective channels
+#         Rstar=R/Rmax, Gstar=G/Gmax, Bstar=B/Bmax - Max-normalized pixel values ranging [0,1]
+#         r=Rstar/(Rstar+Gstar+Bstar), g=Gstar/(Rstar+Gstar+Bstar), b=Bstar/(Rstar+Gstar+Bstar) - Normalized RGB values
+# References:
+# [1] Meyer and Neto (2008). Verification of color vegetation indices for automated crop imaging applications, 
+#      Computers and Electronics in Agriculture, 2008, 63:282-293.
+# [2] Bendig et al. (2015). Combining UAV-based plant height from crop surface models, visible,
+#     and near infrared vegetation indices for biomass monitoring in barley. International Journal of Applied Earth Observation and
+#     Geoinformation, 2015, 39:79-87.
+# [3] Zhang et al. (2023). New research methods for vegetation information extraction based on
+#      visible light remote sensing images from an unmanned aerial vehicle (UAV). Int J Appl Earth Obs Geoinformation 78 (2019) 215–226.
+# [4] Hammond et al. (2023). Assessing within-field variation in Alfalfa leaf area index using UAV visible vegetation indices. Agronomy, 2023, 13, 1289.
+# [5] Jiang Jie et al. (2019). Use of a digital camera mounted on a consumer-grade unmanned aerial vehicle to monitor the growth status of wheat. Journal of Nanjing Agricultural University, 2019, 42(4):622-631. (in Chinese)
+# [6] Zhou Tao et al. (2021). Green vegetation extraction based on visible light image of UAV. China Environmental Science, 2021, 41(5):2380-2390. (in Chinese)
+
+# Visible vegetation indices based on normalized r, g, b:
+# Formulas from Jiang Jie et al. (2019):
+#ExG = 2*g - r - b     
+#ExR = 1.4*r - g
+#ExGR = 3*g - 2.4*r - b
+#NGRDI = (g - r)/(g + r)  
+#VARI = (g - r)/(g + r + b)
+#GLI = (2*g - b - r)/(2*g + b + r)
+
+# VIs formulas from Hammond et al. (2023):
+#ExB = 1.4*b - g
+#IKAW = (r - b)/(r + b)
+#MGRVI = (g**2 - r**2)/(g**2 + r**2)         
+#RGBVI = (g**2 - b*r)/(g**2 + b*r)       
+
+# Additional VIs formulas:
+#NGBDI = (g - b)/(g + b)  
+#RGRI = r/g
+#GBRI = b/g
+
+# Processing steps:
+
+# Step 1: 
+# Load result-20230831-12-I-1.tif in ArcMap(ESRI,2020. ArcGIS desktop: Release 10.8. Redlands, CA: Environmental systems Research Insititute.)
+
+# Step 2:
+# Open Python Window in ArcMap
+
+# Step 3:
+# Copy and paste the following Python code into ArcMap's Python Window, press Enter twice to execute
+
+################################################################################
+# Import arcpy libraries
+import arcpy    
+from arcpy.sa import *                                
+
+# Extract DN values from first three bands
+arcpy.MakeRasterLayer_management("result-20230831-12-I-1.tif", "result-20230831-12-I-1_band1", '#', '#', '1')   
+arcpy.MakeRasterLayer_management("result-20230831-12-I-1.tif", "result-20230831-12-I-1_band2", '#', '#', '2')   
+arcpy.MakeRasterLayer_management("result-20230831-12-I-1.tif", "result-20230831-12-I-1_band3", '#', '#', '3')   
+
+# Convert to float values
+R = Raster("result-20230831-12-I-1_band1") * 1.0          
+G = Raster("result-20230831-12-I-1_band2") * 1.0          
+B = Raster("result-20230831-12-I-1_band3") * 1.0         
+
+# Save single-band images
+R.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_band1.tif") 
+G.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_band2.tif") 
+B.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_band3.tif") 
+
+# Calculate normalized values
+r = R/(R + G + B)
+g = G/(R + G + B)
+b = B/(R + G + B)
+
+# Calculate vegetation indices
+ExR = 1.4*r - g
+ExG = 2*g - r - b     
+ExB = 1.4*b - g
+ExGR = 3*g - 2.4*r - b
+RGRI = r/g
+GBRI = b/g
+NGRDI = (g - r)/(g + r)  
+NGBDI = (g - b)/(g + b)  
+IKAW = (r - b)/(r + b)
+VARI = (g - r)/(g + r + b)
+GLI = (2*g - b - r)/(2*g + b + r)
+MGRVI = (g**2 - r**2)/(g**2 + r**2)         
+RGBVI = (g**2 - b*r)/(g**2 + b*r)       
+
+# Save vegetation index maps
+ExR.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_ExR.tif")
+ExG.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_ExG.tif")
+ExB.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_ExB.tif")
+ExGR.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_ExGR.tif")
+RGRI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_RGRI.tif")
+GBRI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_GBRI.tif")
+NGRDI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_NGRDI.tif")
+NGBDI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_NGBDI.tif")
+IKAW.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_IKAW.tif")
+VARI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_VARI.tif")
+GLI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_GLI.tif")
+MGRVI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_MGRVI.tif") 
+RGBVI.save("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1_RGBVI.tif")
+
+# Statistical analysis mean, max, min and std for each VIs
+ExR_stat = [ExR.mean, ExR.maximum, ExR.minimum, ExR.standardDeviation]
+ExG_stat=[ExG.mean,ExG.maximum,ExG.minimum,ExG.standardDeviation]
+ExB_stat=[ExB.mean,ExB.maximum,ExB.minimum,ExB.standardDeviation]
+ExGR_stat=[ExGR.mean,ExGR.maximum,ExGR.minimum,ExGR.standardDeviation]
+RGRI_stat=[RGRI.mean,RGRI.maximum,RGRI.minimum,RGRI.standardDeviation]
+GBRI_stat=[GBRI.mean,GBRI.maximum,GBRI.minimum,GBRI.standardDeviation]
+NGRDI_stat=[NGRDI.mean,NGRDI.maximum,NGRDI.minimum,NGRDI.standardDeviation]
+NGBDI_stat=[NGBDI.mean,NGBDI.maximum,NGBDI.minimum,NGBDI.standardDeviation]
+IKAW_stat=[IKAW.mean,IKAW.maximum,IKAW.minimum,IKAW.standardDeviation]
+VARI_stat=[VARI.mean,VARI.maximum,VARI.minimum,VARI.standardDeviation]
+GLI_stat=[GLI.mean,GLI.maximum,GLI.minimum,GLI.standardDeviation]
+MGRVI_stat=[MGRVI.mean,MGRVI.maximum,MGRVI.minimum,MGRVI.standardDeviation]
+RGBVI_stat=[RGBVI.mean,RGBVI.maximum,RGBVI.minimum,RGBVI.standardDeviation]
+
+tuple=[ExR_stat,ExG_stat,ExB_stat,ExGR_stat,RGRI_stat,GBRI_stat,NGRDI_stat,NGBDI_stat,IKAW_stat,VARI_stat,GLI_stat,MGRVI_stat,RGBVI_stat]
+
+# Output statistics to CSV
+file_object=open("D:/map/rasters/rasters_I-1/20230831_differentSEA/20230831-12-I-1/20230831-12-I-1-stat.csv",'w')
+file_object.writelines("time,VI,mean,maximum,minimum,standardDeviation\n")
+for i in range(0,len(tuple)):
+        print(i)
+        tuple_i=tuple[i]           
+        tuple_i=str(tuple_i)     
+        tuple_i=tuple_i[1:-1]   
+        if i==0:
+            tuple_i="20230831-12-,"+"ExR,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)                      
+        if i==1:
+            tuple_i="20230831-12-,"+"ExG,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==2:
+            tuple_i="20230831-12-,"+"ExB,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==3:
+            tuple_i="20230831-12-,"+"ExGR,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==4:
+            tuple_i="20230831-12-,"+"RGRI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==5:
+            tuple_i="20230831-12-,"+"GBRI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==6:
+            tuple_i="20230831-12-,"+"NGRDI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==7:
+            tuple_i="20230831-12-,"+"NGBDI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)      
+        if i==8:
+            tuple_i="20230831-12-,"+"IKAW,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==9:
+            tuple_i="20230831-12-,"+"VARI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==10:
+            tuple_i="20230831-12-,"+"GLI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==11:
+            tuple_i="20230831-12-,"+"MGRVI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+        if i==12:
+            tuple_i="20230831-12-,"+"RGBVI,"+tuple_i+"\n"
+            file_object.writelines(tuple_i)
+file_object.close()  
+####################################################################### 
